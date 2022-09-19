@@ -45,6 +45,7 @@ public class RobotService {
 
 
     public void apiFetch(){
+        robotRepository.deleteAll();
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<List<Robot>> rateResponse =restTemplate.exchange(robotApi,HttpMethod.GET,
                 null, new ParameterizedTypeReference<List<Robot>>() {
