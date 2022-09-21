@@ -43,8 +43,8 @@ This is simple Spring boot REST API  which  stores information about the robot a
   
   4. **Testing the Endpoints**
   5. Use any API endpoint tester for my case I used Postman. The list of available endpoints are:
-  7.              **Survivors**
-  8.              
+              **Survivors**
+              
   9.  **Add Survivor: http://localhost:9090/survivor/save 
   10.  **List All Survivors: http://localhost:9090/survivor/list
   11. **update survivors location: http://localhost:9090/survivor/location/update
@@ -55,12 +55,12 @@ This is simple Spring boot REST API  which  stores information about the robot a
   16. **Flag Survivor As Infected: http://localhost:9090/survivor/flag/infected/{id}
   17. **Find survivor by id: http://localhost:9090/survivor/find/by/{id}
   18. **Delete survivor by id: http://localhost:9090/survivor/delete/{id}
-  19. 
-  20.                     **Robots**
-  21.                     
+   
+                     **Robots**
+                      
   22. **List  All Robots: http://localhost:9090/robot/list
   23. **List All flying robots: http://localhost:9090/robot/flying/list
   24. **List Land Robots: http://localhost:9090/robot/land/list
   25. 
-  26.              **A more detailed information is available in the API specification document that is Available in this project root folder**
+  26 A more detailed information is available in the API specification document that is Available in this project root folder
       
