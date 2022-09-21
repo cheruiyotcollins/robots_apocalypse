@@ -12,9 +12,9 @@ import com.indomidas.apocalypse.repository.LocationRepository;
 import com.indomidas.apocalypse.repository.SurvivorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.GeneratedValue;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,41 +31,91 @@ public class SurvivorService {
     GeneralResponse generalResponse;
 
     public List<SurvivorResponse> listAllSurvivors() {
-        List<Survivor> survivors = survivorRepository.findAll();
         List<SurvivorResponse> survivorsResponseList = new ArrayList<>();
 
-        survivors.stream().forEach(survivor -> {
-                    SurvivorResponse survivorResponse = new SurvivorResponse();
-                    survivorResponse.setId(survivor.getId());
-                    survivorResponse.setAge(survivor.getAge());
-                    survivorResponse.setGender(survivor.getGender());
-                    survivorResponse.setInfectionStatus(survivor.getInfectionStatus());
-                    survivorResponse.setName(survivor.getName());
-                    survivorResponse.setNationalIdNo(survivor.getNationalIdNo());
-                    //setting up location
-                    Location location= new Location();
-                    location.setLongitude(survivor.getLocation().getLongitude());
-                    location.setLatitude(survivor.getLocation().getLatitude());
-                    //setting up inventory
-                    survivorResponse.setLocation(location);
-                    Inventory inventory= new Inventory();
-                    inventory.setWater(survivor.getInventory().getWater());
-                    inventory.setMedication(survivor.getInventory().getMedication());
-                    inventory.setFood(survivor.getInventory().getFood());
-                    inventory.setAmmunition(survivor.getInventory().getAmmunition());
-                    survivorResponse.setInventory(inventory);
-                   survivorsResponseList.add(survivorResponse);
-
+        survivorRepository.findAll().stream().forEach(survivor -> {
+                    survivorsResponseList.add(setSurvivorResponse(survivor));
                 }
         );
+        return survivorsResponseList;
 
-       return survivorsResponseList;
+    }
+    public List<SurvivorResponse> listAllInfectedSurvivors() {
+        List<SurvivorResponse> survivorsResponseList = new ArrayList<>();
+
+        survivorRepository.findByInfectionStatus("infected").stream().forEach(survivor -> {
+                    survivorsResponseList.add(setSurvivorResponse(survivor));
+                }
+        );
+        return survivorsResponseList;
+
+    }
+    public List<SurvivorResponse> listAllUninfectedSurvivors() {
+        List<SurvivorResponse> survivorsResponseList = new ArrayList<>();
+
+        survivorRepository.findByInfectionStatus("uninfected").stream().forEach(survivor -> {
+                    survivorsResponseList.add(setSurvivorResponse(survivor));
+                }
+        );
+        return survivorsResponseList;
+
+    }
+    public ResponseEntity<?> infectedSurvivorsPercentage() {
+        double infectedSurvivers=survivorRepository.findByInfectionStatus("infected").size();
+        double allSurvivers=survivorRepository.findAll().size();
+        double percentage =(infectedSurvivers/allSurvivers)*100;
+        generalResponse= new GeneralResponse();
+        generalResponse.setStatus(HttpStatus.ACCEPTED);
+        generalResponse.setDescription("Infected Percentage is : "+percentage);
+
+        return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
+
+    }
+    public ResponseEntity<?> uninfectedSurvivorsPercentage() {
+        double infectedSurvivers=survivorRepository.findByInfectionStatus("uninfected").size();
+        double allSurvivers=survivorRepository.findAll().size();
+        double percentage =(infectedSurvivers/allSurvivers)*100;
+         generalResponse= new GeneralResponse();
+        generalResponse.setStatus(HttpStatus.ACCEPTED);
+        generalResponse.setDescription("Uninfected Percentage is : "+percentage);
+
+        return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
 
     }
 
-    public GeneralResponse saveOrUpdate(SurvivorRequest survivorRequest) {
-        generalResponse=new GeneralResponse();
+
+    public ResponseEntity<?> flagSurvivorAsInfected(Long id) {
+        generalResponse= new GeneralResponse();
         try{
+           Survivor survivor= survivorRepository.findById(id).get();
+           survivor.setContaminationCount(survivor.getContaminationCount()+1);
+           if(survivor.getContaminationCount()>=3){
+               survivor.setInfectionStatus("infected");
+           }
+           survivorRepository.save(survivor);
+            generalResponse.setStatus(HttpStatus.ACCEPTED);
+            generalResponse.setDescription("Survivor Flagged Successfully");
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
+        }catch (Exception e){
+            generalResponse.setStatus(HttpStatus.ACCEPTED);
+            generalResponse.setDescription("Survivor Not Found, please check Id and try again");
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
+        }
+
+
+
+
+    }
+
+
+
+
+
+
+
+    public ResponseEntity<?> saveOrUpdate(SurvivorRequest survivorRequest) {
+        generalResponse = new GeneralResponse();
+        try {
             Survivor survivor = new Survivor();
             //Setting up survivor details
             survivor.setAge(survivorRequest.getAge());
@@ -92,23 +142,22 @@ public class SurvivorService {
             generalResponse.setStatus(HttpStatus.ACCEPTED);
             generalResponse.setDescription("Survivor saved successfully");
 
-            return generalResponse;
-        }catch (Exception e){
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
+        } catch (Exception e) {
             generalResponse.setStatus(HttpStatus.ACCEPTED);
             generalResponse.setDescription("Failed to save survivor to DB, please check your request and try again");
-            return generalResponse;
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
 
         }
 
 
-
     }
 
-    public GeneralResponse updateLocation(LocationUpdateRequest locationUpdateRequest){
-        generalResponse= new GeneralResponse();
-        try{
-           Survivor survivor= survivorRepository.findById(locationUpdateRequest.getId()).get();
-            Location location= survivor.getLocation();
+    public ResponseEntity<?> updateLocation(LocationUpdateRequest locationUpdateRequest) {
+        generalResponse = new GeneralResponse();
+        try {
+            Survivor survivor = survivorRepository.findById(locationUpdateRequest.getId()).get();
+            Location location = survivor.getLocation();
             location.setLongitude(locationUpdateRequest.getLongitude());
             location.setLatitude(locationUpdateRequest.getLatitude());
             locationRepository.save(location);
@@ -116,15 +165,71 @@ public class SurvivorService {
             survivorRepository.save(survivor);
             generalResponse.setStatus(HttpStatus.ACCEPTED);
             generalResponse.setDescription("Location updated Successfully");
-            return generalResponse;
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
 
-        }catch (Exception e){
-             generalResponse.setStatus(HttpStatus.ACCEPTED);
-             generalResponse.setDescription("Failed to update location please check your request and try again");
-            return generalResponse;
+        } catch (Exception e) {
+            generalResponse.setStatus(HttpStatus.ACCEPTED);
+            generalResponse.setDescription("Failed to update location please check your request and try again");
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
         }
 
 
+    }
+
+    public SurvivorResponse setSurvivorResponse(Survivor survivor) {
+        SurvivorResponse survivorResponse = new SurvivorResponse();
+        survivorResponse.setId(survivor.getId());
+        survivorResponse.setAge(survivor.getAge());
+        survivorResponse.setGender(survivor.getGender());
+        survivorResponse.setInfectionStatus(survivor.getInfectionStatus());
+        survivorResponse.setName(survivor.getName());
+        survivorResponse.setNationalIdNo(survivor.getNationalIdNo());
+        survivorResponse.setFlagedAsInfectedCount(survivor.getContaminationCount());
+        //setting up location
+        Location location = new Location();
+        location.setLongitude(survivor.getLocation().getLongitude());
+        location.setLatitude(survivor.getLocation().getLatitude());
+        //setting up inventory
+        survivorResponse.setLocation(location);
+        Inventory inventory = new Inventory();
+        inventory.setWater(survivor.getInventory().getWater());
+        inventory.setMedication(survivor.getInventory().getMedication());
+        inventory.setFood(survivor.getInventory().getFood());
+        inventory.setAmmunition(survivor.getInventory().getAmmunition());
+        survivorResponse.setInventory(inventory);
+
+        return survivorResponse;
+
+    }
+
+    public ResponseEntity<?> findById(Long id){
+        try{
+            return new ResponseEntity(setSurvivorResponse(survivorRepository.findById(id).get()), HttpStatus.ACCEPTED);
+
+        }catch (Exception e){
+            generalResponse =new GeneralResponse();
+            generalResponse.setStatus(HttpStatus.ACCEPTED);
+            generalResponse.setDescription("Survivor not found, please check Id and try again");
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
+        }
+
+    }
+
+    public ResponseEntity<?> deleteById(Long id){
+
+        generalResponse= new GeneralResponse();
+
+        try{
+            survivorRepository.deleteById(id);
+            generalResponse.setStatus(HttpStatus.ACCEPTED);
+            generalResponse.setDescription("Survivor Deleted Successfully");
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
+        }
+        catch (Exception e){
+            generalResponse.setStatus(HttpStatus.ACCEPTED);
+            generalResponse.setDescription("Failed to delete please check your request and try again");
+            return new ResponseEntity(generalResponse, HttpStatus.ACCEPTED);
+        }
     }
 
 }

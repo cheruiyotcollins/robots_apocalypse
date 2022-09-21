@@ -11,6 +11,7 @@ public class SurvivorResponse {
     private int age;
     private String infectionStatus;
     private Location location;
+    private int flagedAsInfectedCount;
     private Inventory inventory;
 
     public Long getId() {
@@ -19,6 +20,15 @@ public class SurvivorResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+
+    public int getFlagedAsInfectedCount() {
+        return flagedAsInfectedCount;
+    }
+
+    public void setFlagedAsInfectedCount(int flagedAsInfectedCount) {
+        this.flagedAsInfectedCount = flagedAsInfectedCount;
     }
 
     public String getNationalIdNo() {

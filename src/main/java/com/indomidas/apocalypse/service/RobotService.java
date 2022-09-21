@@ -45,12 +45,17 @@ public class RobotService {
 
 
     public void apiFetch(){
-        robotRepository.deleteAll();
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<List<Robot>> rateResponse =restTemplate.exchange(robotApi,HttpMethod.GET,
-                null, new ParameterizedTypeReference<List<Robot>>() {
-                        });
-        List<Robot> robots = rateResponse.getBody();
-        robotRepository.saveAll(robots);
+        try {
+
+            robotRepository.deleteAll();
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<List<Robot>> rateResponse = restTemplate.exchange(robotApi, HttpMethod.GET,
+                    null, new ParameterizedTypeReference<List<Robot>>() {
+                    });
+            List<Robot> robots = rateResponse.getBody();
+             robotRepository.saveAll(robots);
+        }catch(Exception e){
+            System.out.println("Please Connect to the internet to load robots "+ e);
+        }
     }
 }
